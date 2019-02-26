@@ -1,0 +1,17 @@
+{
+  "name": "slidecentrepoc",
+  "version": "1.0.0",
+  "description": "Proof of concept for programmatically editing and building powerpoint slides and presentations using Javascript",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Lloyd Leagas",
+  "license": "ISC",
+  "dependencies": {
+    "jszip": "^3.2.0",
+    "node-gyp": "^3.8.0",
+    "text-encoding": "^0.7.0",
+    "xml2js": "^0.4.19"
+  }
+}
