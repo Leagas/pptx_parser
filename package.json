@@ -10,8 +10,15 @@
   "license": "ISC",
   "dependencies": {
     "jszip": "^3.2.0",
-    "node-gyp": "^3.8.0",
-    "text-encoding": "^0.7.0",
     "xml2js": "^0.4.19"
-  }
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Leagas/SlideCentrePOC.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Leagas/SlideCentrePOC/issues"
+  },
+  "homepage": "https://github.com/Leagas/SlideCentrePOC#readme"
 }
