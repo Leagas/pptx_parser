@@ -2,7 +2,14 @@ const fs = require('fs')
 const path = require('path')
 const JSZip = require('jszip')
 const xml2js = require('xml2js')
-const { validExtension, contentRel, presentationRel } = require('./lib/utils')
+const {
+	validExtension,
+	updateContentRel,
+	updatePresentationRel ,
+	updateLayoutRel,
+	updateSlideRel,
+	updateMasterRel
+} = require('./lib/utils')
 
 const TMaster = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster'
 const TLayout = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout'
@@ -86,13 +93,14 @@ class pptx {
 		}
 
 		let layout = this.name(data.slide.rels, TLayout)
-		let master = this.name(data.layout.rels, TMaster)
-		let images = this.images(data.slide.rels)
 
 		data.layout = {
 			xml: this.data.files[`ppt/slideLayouts${layout}`],
 			rels: this.data.files[`ppt/slideLayouts/_rels${layout}.rels`],
 		}
+
+		let master = this.name(data.layout.rels, TMaster)
+		let images = this.images(data.slide.rels)
 
 		data.master = {
 			xml: this.data.files[`ppt/slideMasters${master}`],
@@ -139,8 +147,12 @@ class pptx {
 	}
 
 	update(data, id) {
-		data.slide.rels = slideRel(id, images)
-		data.slide.layout = layoutRel(id)
+
+		data.slide.rels = updateSlideRel(id, data.images, data.slide.rels)
+		data.layout.rels = updateLayoutRel(id)
+		data.master.rels = updateMasterRel(id, data.images, data.master.rels)
+
+		return data
 	}
 }
 

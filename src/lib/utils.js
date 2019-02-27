@@ -9,7 +9,7 @@ module.exports = {
 		return false
 	},
 
-	layoutRel: (id) => {
+	updateLayoutRel: (id, data) => {
 		return {
 			Relationships: {
 				'$': {
@@ -26,34 +26,53 @@ module.exports = {
 		}
 	},
 
-	slideRel: (id, images) => {
-		images = images.map((image, index) => {
-			return {
+	updateSlideRel: (id, images, data) => {
+		data.Relationships.Relationship = []
+
+		images.forEach((image, index) => {
+			data.Relationships.Relationship.push({
 				'$': {
-					Id: `rId${index+1}`,
+					Id: `rId${id+index}`,
 					Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
-					Target: `../media/image${index+1}.xml`
+					Target: `../media/image${id+index}.xml`
 				}
+			})
+		})
+
+		data.Relationships.Relationship.push({
+			'$': {
+				Id: `rId${id}`,
+				Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
+				Target: `../slideLayouts/slideLayout${id}.xml`
 			}
 		})
 
-		return {
-			Relationships: {
-				'$': {
-					xmlns: "http://schemas.openxmlformats.org/package/2006/relationships"
-				},
-				Relationship: [{
-					'$': {
-						Id: `rId${id}`,
-						Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
-						Target: `../slideLayouts/slideLayout${id}.xml`
-					}, ...images
-				}]
-			}
-		}
+		return data
 	},
 
-	contentRel: (id) => {
+	updateMasterRel: (id, images, data) => {
+		images.forEach((image, index) => {
+			data.Relationships.Relationship.push({
+				'$': {
+					Id: `rId${id+index}`,
+					Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
+					Target: `../media/image${id+index}.xml`
+				}
+			})
+		})
+
+		data.Relationships.Relationship.push({
+			'$': {
+				Id: `rId${id}`,
+				Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
+				Target: `../slideLayouts/slideLayout${id}.xml`
+			}
+		})
+
+		return data
+	},
+
+	updateContentRel: (id) => {
 		return {
 			"$": {
 				"PartName": `/ppt/slides/slide${id}.xml`,
@@ -66,7 +85,7 @@ module.exports = {
 		}
 	},
 
-	presentationRel: (id) => {
+	updatePresentationRel: (id) => {
 		return {
 			rels: {
 				'$': {
