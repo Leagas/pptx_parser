@@ -4,6 +4,10 @@ const JSZip = require('jszip')
 const xml2js = require('xml2js')
 const { validExtension, contentRel, presentationRel } = require('./lib/utils')
 
+const TMaster = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster'
+const TLayout = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout'
+const TImage = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image'
+
 class pptx {
 
 	constructor(file) {
@@ -66,113 +70,77 @@ class pptx {
 		for (let key in this.data.files) {
 			if (validExtension(key)) {
 				if (this.data.files[key]) {
-					let file = xml.buildObject(this.data.files[key])
+					let file = xml.p(this.data.files[key])
 					this.data.file(key, file)
 				}
 			}
 		}
 	}
 
-	// returns a slide at index
 	slide(index) {
-		if (index < 1) {
-			return console.log(`Slide index starts at 1`)
-		}
-
-		let rels = this.map(this.data.files[`ppt/slides/_rels/slide${index}.xml.rels`].Relationships.Relationship)
-
-		return {
+		let data = {
 			slide: {
 				xml: this.data.files[`ppt/slides/slide${index}.xml`],
 				rels: this.data.files[`ppt/slides/_rels/slide${index}.xml.rels`]
-			},
-			layout: {
-				xml: this.data.files[`ppt/slideLayouts${rels.layout}`],
-				rels: this.data.files[`ppt/slideLayouts/_rels${rels.layout}.rels`]
-			},
-			assets: rels.media
+			}
 		}
+
+		let layout = this.name(data.slide.rels, TLayout)
+		let master = this.name(data.layout.rels, TMaster)
+		let images = this.images(data.slide.rels)
+
+		data.layout = {
+			xml: this.data.files[`ppt/slideLayouts${layout}`],
+			rels: this.data.files[`ppt/slideLayouts/_rels${layout}.rels`],
+		}
+
+		data.master = {
+			xml: this.data.files[`ppt/slideMasters${master}`],
+			rels: this.data.files[`ppt/slideMasters/_rels${master}.rels`]
+		}
+
+		data.images = images
+
+		return data
 	}
 
-	map(rels) {
-		let layout
-		let media = []
+	name(rels, type) {
+		let name
 
-		rels.forEach(item => {
-			let key = item['$'].Target.replace('..', 'ppt')
-			let type = item['$'].Type.substr(item['$'].Type.lastIndexOf('/'))
+		rels.Relationships.Relationship.forEach(item => {
+			item = item['$']
 
-			if (type == '/image') {
-				media.push({
-					key: key,
-					content: this.data.files[key],
-					master: item
-				})
-			}
-
-			if (type == '/slideLayout') {
-				layout = key.substr(key.lastIndexOf('/'))
+			if (item.Type == type) {
+				name = item.Target.substr(item.Target.lastIndexOf('/'))
 			}
 		})
 
-		return {
-			media: media,
-			layout: layout
-		}
+		return name
 	}
 
-	// add a slide
-	add(data) {
-		// a unique id is needed so we don't overwite any existing slides, we can determine the the next id but might encounter performance issues.
+	images(rels) {
+		let images = []
+
+		rels.Relationships.Relationship.forEach(item => {
+			item = item['$']
+
+			if (item.Type == TImage) {
+				images.push(this.data.files[item.Target.replace('..', 'ppt')])
+			}
+		})
+
+		return images
+	}
+
+	create(slide) {
 		const id = Date.now().toString().substr(8, 13)
 
-		this.updatePresentation(id)
-		this.updateContent(id)
-		this.updateSlides(data.slide, id)
-		this.updateLayouts(data.layout, id)
-		this.updateMedia(data.assets, id)
-
-		// we need to increament the presentation slide count to avoid ppt repair process
-		this.data.files['docProps/app.xml'].Properties['Slides'] = parseInt(this.data.files['docProps/app.xml'].Properties['Slides'][0] + 1).toString()
+		slide = this.update(slide, id)
 	}
 
-	updatePresentation(id) {
-		let presentation = presentationRel(id)
-
-		this.data.files['ppt/_rels/presentation.xml.rels'].Relationships.Relationship.push(presentation.rels)
-		this.data.files['ppt/presentation.xml']['p:presentation']['p:sldIdLst'][0]['p:sldId'].push(presentation.xml)
-	}
-
-	updateContent(id) {
-		let content = contentRel(id)
-
-		this.data.files['[Content_Types].xml'].Types.Override.push(content)
-	}
-
-	updateSlides(slide, id) {
-		this.data.files[`ppt/slides/_rels/slide${id}.xml.rels`] = slide.rels
-		this.data.files[`ppt/slides/slide${id}.xml`] = slide.xml
-	}
-
-	updateLayouts(layout, id) {
-		this.data.files[`ppt/slideLayouts/slideLayout${id}.xml`] = layout.xml
-		this.data.files[`ppt/slideLayouts/_rels/slideLayout${id}.xml.rels`] = layout.rels
-	}
-
-	updateMedia(data) {
-		data.forEach(media => {
-			this.data.files[media.key] = media.content
-			this.updateMaster(media.master)
-		})
-	}
-
-	updateMaster(rel) {
-		this.data.files['ppt/slideMasters/_rels/slideMaster1.xml.rels'].Relationships.Relationship.push(rel)
-	}
-
-	export() {
-		const raw = JSON.stringify(this.data.files, null, 2)
-		fs.writeFileSync('./log.js', raw)
+	update(data, id) {
+		data.slide.rels = slideRel(id, images)
+		data.slide.layout = layoutRel(id)
 	}
 }
 

@@ -9,6 +9,50 @@ module.exports = {
 		return false
 	},
 
+	layoutRel: (id) => {
+		return {
+			Relationships: {
+				'$': {
+					xmlns: "http://schemas.openxmlformats.org/package/2006/relationships"
+				},
+				Relationship: [{
+					'$': {
+						Id: `rId${id}`,
+						Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMasters",
+						Target: `../slideMasters/slideMasters${id}.xml`
+					}
+				}]
+			}
+		}
+	},
+
+	slideRel: (id, images) => {
+		images = images.map((image, index) => {
+			return {
+				'$': {
+					Id: `rId${index+1}`,
+					Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
+					Target: `../media/image${index+1}.xml`
+				}
+			}
+		})
+
+		return {
+			Relationships: {
+				'$': {
+					xmlns: "http://schemas.openxmlformats.org/package/2006/relationships"
+				},
+				Relationship: [{
+					'$': {
+						Id: `rId${id}`,
+						Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
+						Target: `../slideLayouts/slideLayout${id}.xml`
+					}, ...images
+				}]
+			}
+		}
+	},
+
 	contentRel: (id) => {
 		return {
 			"$": {
