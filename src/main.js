@@ -31,6 +31,8 @@ class pptx {
 
 	// writes nodebuffer to file
 	save(output) {
+		output = output ? output : './output/test.pptx'
+
 		this.data.generateAsync({type: 'nodebuffer'})
 		.then(content => {
 			fs.writeFile(path.join(this.directory, output), content, (err) => {
@@ -102,7 +104,7 @@ class pptx {
 		// updates the content types with the new slide type
 		this.updateContent(id)
 		// appends the new slide id
-		this.updateSlides(id)
+		this.updateSlides(id, slide)
 
 		// we need to increament the presentation slide count to avoid ppt repair process
 		this.data.files['docProps/app.xml'].Properties['Slides'] = parseInt(this.data.files['docProps/app.xml'].Properties['Slides'][0] + 1).toString()
@@ -121,7 +123,7 @@ class pptx {
 		this.data.files['[Content_Types].xml'].Types.Override.push(content)
 	}
 
-	updateSlides(id) {
+	updateSlides(id, slide) {
 		this.data.files[`ppt/slides/_rels/slide${id}.xml.rels`] = slide.rels
 		this.data.files[`ppt/slides/slide${id}.xml`] = slide.xml
 	}
