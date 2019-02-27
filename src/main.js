@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const JSZip = require('jszip')
 const xml2js = require('xml2js')
-const { validExtension, contentXML, presentationXML } = require('./lib/utils')
+const { validExtension, contentRel, presentationRel } = require('./lib/utils')
 
 class pptx {
 
@@ -31,6 +31,8 @@ class pptx {
 
 	// writes nodebuffer to file
 	save(output) {
+		output = output ? output : './output/test.pptx'
+
 		this.data.generateAsync({type: 'nodebuffer'})
 		.then(content => {
 			fs.writeFile(path.join(this.directory, output), content, (err) => {
@@ -102,8 +104,9 @@ class pptx {
 
 			if (type == '/image') {
 				media.push({
-					id: key,
-					content: this.data.files[key]
+					key: key,
+					content: this.data.files[key],
+					master: item
 				})
 			}
 
@@ -123,39 +126,48 @@ class pptx {
 		// a unique id is needed so we don't overwite any existing slides, we can determine the the next id but might encounter performance issues.
 		const id = Date.now().toString().substr(8, 13)
 
-		// updates the presentation rels and xml with the new slides id
 		this.updatePresentation(id)
-		// updates the content types with the new slide type
 		this.updateContent(id)
-		// appends relevant media
-		this.updateMedia(data.assets)
-		// appends the new slide and layout id's
-		this.data.files[`ppt/slides/_rels/slide${id}.xml.rels`] = data.slide.rels
-		this.data.files[`ppt/slides/slide${id}.xml`] = data.slide.xml
-		this.data.files[`ppt/slideLayouts/slideLayout${id}.xml`] = data.layout.xml
-		this.data.files[`ppt/slideLayouts/_rels/slideLayout${id}.xml.rels`] = data.layout.rels
+		this.updateSlides(data.slide, id)
+		this.updateLayouts(data.layout, id)
+		this.updateMedia(data.assets, id)
 
 		// we need to increament the presentation slide count to avoid ppt repair process
 		this.data.files['docProps/app.xml'].Properties['Slides'] = parseInt(this.data.files['docProps/app.xml'].Properties['Slides'][0] + 1).toString()
 	}
 
 	updatePresentation(id) {
-		let presentation = presentationXML(id)
+		let presentation = presentationRel(id)
 
 		this.data.files['ppt/_rels/presentation.xml.rels'].Relationships.Relationship.push(presentation.rels)
 		this.data.files['ppt/presentation.xml']['p:presentation']['p:sldIdLst'][0]['p:sldId'].push(presentation.xml)
 	}
 
 	updateContent(id) {
-		let content = contentXML(id)
+		let content = contentRel(id)
 
 		this.data.files['[Content_Types].xml'].Types.Override.push(content)
 	}
 
+	updateSlides(slide, id) {
+		this.data.files[`ppt/slides/_rels/slide${id}.xml.rels`] = slide.rels
+		this.data.files[`ppt/slides/slide${id}.xml`] = slide.xml
+	}
+
+	updateLayouts(layout, id) {
+		this.data.files[`ppt/slideLayouts/slideLayout${id}.xml`] = layout.xml
+		this.data.files[`ppt/slideLayouts/_rels/slideLayout${id}.xml.rels`] = layout.rels
+	}
+
 	updateMedia(data) {
 		data.forEach(media => {
-			this.data.files[media.id] = media.content
+			this.data.files[media.key] = media.content
+			this.updateMaster(media.master)
 		})
+	}
+
+	updateMaster(rel) {
+		this.data.files['ppt/slideMasters/_rels/slideMaster1.xml.rels'].Relationships.Relationship.push(rel)
 	}
 
 	export() {

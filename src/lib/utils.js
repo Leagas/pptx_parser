@@ -9,7 +9,7 @@ module.exports = {
 		return false
 	},
 
-	contentXML: (id) => {
+	contentRel: (id) => {
 		return {
 			"$": {
 				"PartName": `/ppt/slides/slide${id}.xml`,
@@ -22,7 +22,7 @@ module.exports = {
 		}
 	},
 
-	presentationXML: (id) => {
+	presentationRel: (id) => {
 		return {
 			rels: {
 				'$': {
