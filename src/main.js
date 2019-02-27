@@ -71,29 +71,55 @@ class pptx {
 		}
 	}
 
-	// maps all default slides, note this will miss our slides with randomized indexes
-	map() {
-		let max = parseInt(this.data.files['docProps/app.xml'].Properties['Slides'][0])
-
-		for (let index = 0; index < max; index + 1) {
-			return this.slides[index] = {
-				rels: this.data.files[`ppt/slides/_rels/slide${index+1}.xml.rels`],
-				xml: this.data.files[`ppt/slides/slide${index+1}.xml`],
-			}
-		}
-	}
-
 	// returns a slide at index
 	slide(index) {
 		if (index < 1) {
 			return console.log(`Slide index starts at 1`)
 		}
 
-		return this.slides[index-1]
+		let rels = this.map(this.data.files[`ppt/slides/_rels/slide${index}.xml.rels`].Relationships.Relationship)
+
+		return {
+			slide: {
+				xml: this.data.files[`ppt/slides/slide${index}.xml`],
+				rels: this.data.files[`ppt/slides/_rels/slide${index}.xml.rels`]
+			},
+			layout: {
+				xml: this.data.files[`ppt/slideLayouts${rels.layout}`],
+				rels: this.data.files[`ppt/slideLayouts/_rels${rels.layout}.rels`]
+			},
+			assets: rels.media
+		}
+	}
+
+	map(rels) {
+		let layout
+		let media = []
+
+		rels.forEach(item => {
+			let key = item['$'].Target.replace('..', 'ppt')
+			let type = item['$'].Type.substr(item['$'].Type.lastIndexOf('/'))
+
+			if (type == '/image') {
+				media.push({
+					id: key,
+					content: this.data.files[key]
+				})
+			}
+
+			if (type == '/slideLayout') {
+				layout = key.substr(key.lastIndexOf('/'))
+			}
+		})
+
+		return {
+			media: media,
+			layout: layout
+		}
 	}
 
 	// add a slide
-	add(slide) {
+	add(data) {
 		// a unique id is needed so we don't overwite any existing slides, we can determine the the next id but might encounter performance issues.
 		const id = Date.now().toString().substr(8, 13)
 
@@ -101,8 +127,13 @@ class pptx {
 		this.updatePresentation(id)
 		// updates the content types with the new slide type
 		this.updateContent(id)
-		// appends the new slide id
-		this.updateSlides(id)
+		// appends relevant media
+		this.updateMedia(data.assets)
+		// appends the new slide and layout id's
+		this.data.files[`ppt/slides/_rels/slide${id}.xml.rels`] = data.slide.rels
+		this.data.files[`ppt/slides/slide${id}.xml`] = data.slide.xml
+		this.data.files[`ppt/slideLayouts/slideLayout${id}.xml`] = data.layout.xml
+		this.data.files[`ppt/slideLayouts/_rels/slideLayout${id}.xml.rels`] = data.layout.rels
 
 		// we need to increament the presentation slide count to avoid ppt repair process
 		this.data.files['docProps/app.xml'].Properties['Slides'] = parseInt(this.data.files['docProps/app.xml'].Properties['Slides'][0] + 1).toString()
@@ -121,9 +152,10 @@ class pptx {
 		this.data.files['[Content_Types].xml'].Types.Override.push(content)
 	}
 
-	updateSlides(id) {
-		this.data.files[`ppt/slides/_rels/slide${id}.xml.rels`] = slide.rels
-		this.data.files[`ppt/slides/slide${id}.xml`] = slide.xml
+	updateMedia(data) {
+		data.forEach(media => {
+			this.data.files[media.id] = media.content
+		})
 	}
 
 	export() {

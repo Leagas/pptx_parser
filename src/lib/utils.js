@@ -14,6 +14,10 @@ module.exports = {
 			"$": {
 				"PartName": `/ppt/slides/slide${id}.xml`,
 				"ContentType": "application/vnd.openxmlformats-officedocument.presentationml.slide+xml"
+			},
+			"$": {
+				"PartName": `/ppt/slideLayouts/slideLayout${id}.xml`,
+				"ContentType": "application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"
 			}
 		}
 	},
