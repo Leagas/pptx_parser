@@ -77,7 +77,7 @@ class pptx {
 		for (let key in this.data.files) {
 			if (validExtension(key)) {
 				if (this.data.files[key]) {
-					let file = xml.parseString(this.data.files[key])
+					let file = xml.buildObject(this.data.files[key])
 					this.data.file(key, file)
 				}
 			}
@@ -145,6 +145,11 @@ class pptx {
 
 		data = this.updateRels(data, id)
 
+		// new image
+		data.images.forEach((image, index) => {
+			this.data.files[`ppt/media/image${id+index}.jpg`] = image
+		})
+
 		// new slide
 		this.data.files[`ppt/slides/slide${id}.xml`] = data.slide.xml
 		this.data.files[`ppt/slides/_rels/slide${id}.xml.rels`] = data.slide.rels
@@ -153,21 +158,22 @@ class pptx {
 		this.data.files[`ppt/slideLayouts/slideLayout${id}.xml`] = data.layout.xml
 		this.data.files[`ppt/slideLayouts/_rels/slideLayout${id}.xml.rels`] = data.layout.rels
 
-		// new master
-		this.data.files[`ppt/slideMasters/slideMaster${id}.xml`] = data.master.xml
-		this.data.files[`ppt/slideMasters/_rels/slideMaster${id}.xml.rels`] = data.master.rels
-
 		// new presentation
 		let presentation = updatePresentation(id)
 
-		this.data.files['ppt/_rels/presentation.xml.rels'].Relationships.Relationship.push(presentation.rels)
+		this.data.files['ppt/_rels/presentation.xml.rels'].Relationships.Relationship.push(...presentation.rels)
 		this.data.files['ppt/presentation.xml']['p:presentation']['p:sldIdLst'][0]['p:sldId'].push(presentation.xml)
-		this.data.files['ppt/presentation.xml']['p:presentation']['p:sldMasterIdLst'][0]['p:sldMasterId'].push(presentation.xml)
+		this.data.files['ppt/presentation.xml']['p:presentation']['p:sldMasterIdLst'][0]['p:sldMasterId'].push(presentation.master)
+
+		// new master
+		this.data.files[`ppt/slideMasters/_rels/slideMaster${id}.xml.rels`] = data.master.rels
+		this.data.files[`ppt/slideMasters/slideMaster${id}.xml`] = data.master.xml
+		this.data.files[`ppt/slideMasters/slideMaster${id}.xml`]['p:sldMaster']['p:sldLayoutIdLst'][0]['p:sldLayoutId'].push(presentation.master)
 
 		// new content
 		let content = updateContent(id)
 
-		this.data.files['[Content_Types].xml'].Types.Override.push(content)
+		this.data.files['[Content_Types].xml'].Types.Override.push(...content)
 	}
 
 	updateRels(data, id) {
@@ -181,3 +187,6 @@ class pptx {
 }
 
 module.exports = pptx
+
+// JSON.stringify(p1.data.files['ppt/_rels/presentation.xml.rels')
+// JSON.stringify(p1.data.files['ppt/slides/slide1.xml'])

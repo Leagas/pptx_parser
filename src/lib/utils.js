@@ -18,7 +18,7 @@ module.exports = {
 				Relationship: [{
 					'$': {
 						Id: `rId${id}`,
-						Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMasters",
+						Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster",
 						Target: `../slideMasters/slideMasters${id}.xml`
 					}
 				}]
@@ -33,8 +33,8 @@ module.exports = {
 			data.Relationships.Relationship.push({
 				'$': {
 					Id: `rId${id+index}`,
-					Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
-					Target: `../media/image${id+index}.xml`
+					Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+					Target: `../media/image${id+index}.jpg`
 				}
 			})
 		})
@@ -55,8 +55,8 @@ module.exports = {
 			data.Relationships.Relationship.push({
 				'$': {
 					Id: `rId${id+index}`,
-					Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
-					Target: `../media/image${id+index}.xml`
+					Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+					Target: `../media/image${id+index}.jpg`
 				}
 			})
 		})
@@ -73,20 +73,26 @@ module.exports = {
 	},
 
 	updateContent: (id) => {
-		return {
-			"$": {
-				"PartName": `/ppt/slides/slide${id}.xml`,
-				"ContentType": "application/vnd.openxmlformats-officedocument.presentationml.slide+xml"
+		return [
+			{
+				"$": {
+					"PartName": `/ppt/slides/slide${id}.xml`,
+					"ContentType": "application/vnd.openxmlformats-officedocument.presentationml.slide+xml"
+				},
 			},
-			"$": {
-				"PartName": `/ppt/slideLayouts/slideLayout${id}.xml`,
-				"ContentType": "application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"
+			{
+				"$": {
+					"PartName": `/ppt/slideLayouts/slideLayout${id}.xml`,
+					"ContentType": "application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"
+				},
 			},
-			"$": {
-				"PartName": `/ppt/slideMasters/slideMaster${id}.xml`,
-				"ContentType": "aapplication/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"
+			{
+				"$": {
+					"PartName": `/ppt/slideMasters/slideMaster${id}.xml`,
+					"ContentType": "aapplication/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"
+				}
 			}
-		}
+		]
 	},
 
 	updatePresentation: (id) => {
@@ -94,16 +100,16 @@ module.exports = {
 			rels: [
 				{
 					'$': {
-						Id: `rId${id}`,
+						Id: `rId${id+1}`,
 						Type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide',
 						Target: `slides/slide${id}.xml`
 					},
 				},
 				{
 					'$': {
-						Id: `rId${id}`,
-						Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMasters",
-						Target: `../slideMasters/slideMasters${id}.xml`
+						Id: `rId${id+2}`,
+						Type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster",
+						Target: `slideMasters/slideMasters${id}.xml`
 					}
 				}
 			],
