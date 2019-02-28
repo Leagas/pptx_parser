@@ -4,8 +4,8 @@ const JSZip = require('jszip')
 const xml2js = require('xml2js')
 const {
 	validExtension,
-	updateContentRel,
-	updatePresentationRel ,
+	updateContent,
+	updatePresentation,
 	updateLayoutRel,
 	updateSlideRel,
 	updateMasterRel
@@ -77,7 +77,7 @@ class pptx {
 		for (let key in this.data.files) {
 			if (validExtension(key)) {
 				if (this.data.files[key]) {
-					let file = xml.p(this.data.files[key])
+					let file = xml.parseString(this.data.files[key])
 					this.data.file(key, file)
 				}
 			}
@@ -140,13 +140,37 @@ class pptx {
 		return images
 	}
 
-	create(slide) {
+	create(data) {
 		const id = Date.now().toString().substr(8, 13)
 
-		slide = this.update(slide, id)
+		data = this.updateRels(data, id)
+
+		// new slide
+		this.data.files[`ppt/slides/slide${id}.xml`] = data.slide.xml
+		this.data.files[`ppt/slides/_rels/slide${id}.xml.rels`] = data.slide.rels
+
+		// new layout
+		this.data.files[`ppt/slideLayouts/slideLayout${id}.xml`] = data.layout.xml
+		this.data.files[`ppt/slideLayouts/_rels/slideLayout${id}.xml.rels`] = data.layout.rels
+
+		// new master
+		this.data.files[`ppt/slideMasters/slideMaster${id}.xml`] = data.master.xml
+		this.data.files[`ppt/slideMasters/_rels/slideMaster${id}.xml.rels`] = data.master.rels
+
+		// new presentation
+		let presentation = updatePresentation(id)
+
+		this.data.files['ppt/_rels/presentation.xml.rels'].Relationships.Relationship.push(presentation.rels)
+		this.data.files['ppt/presentation.xml']['p:presentation']['p:sldIdLst'][0]['p:sldId'].push(presentation.xml)
+		this.data.files['ppt/presentation.xml']['p:presentation']['p:sldMasterIdLst'][0]['p:sldMasterId'].push(presentation.xml)
+
+		// new content
+		let content = updateContent(id)
+
+		this.data.files['[Content_Types].xml'].Types.Override.push(content)
 	}
 
-	update(data, id) {
+	updateRels(data, id) {
 
 		data.slide.rels = updateSlideRel(id, data.images, data.slide.rels)
 		data.layout.rels = updateLayoutRel(id)
