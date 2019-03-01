@@ -4,11 +4,6 @@ const JSZip = require('jszip')
 const xml2js = require('xml2js')
 const {
 	validExtension,
-	updateContent,
-	updatePresentation,
-	updateLayoutRel,
-	updateSlideRel,
-	updateMasterRel
 } = require('./lib/utils')
 
 const TMaster = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster'
@@ -83,110 +78,6 @@ class pptx {
 			}
 		}
 	}
-
-	slide(index) {
-		let data = {
-			slide: {
-				xml: this.data.files[`ppt/slides/slide${index}.xml`],
-				rels: this.data.files[`ppt/slides/_rels/slide${index}.xml.rels`]
-			}
-		}
-
-		let layout = this.name(data.slide.rels, TLayout)
-
-		data.layout = {
-			xml: this.data.files[`ppt/slideLayouts${layout}`],
-			rels: this.data.files[`ppt/slideLayouts/_rels${layout}.rels`],
-		}
-
-		let master = this.name(data.layout.rels, TMaster)
-		let images = this.images(data.slide.rels)
-
-		data.master = {
-			xml: this.data.files[`ppt/slideMasters${master}`],
-			rels: this.data.files[`ppt/slideMasters/_rels${master}.rels`]
-		}
-
-		data.images = images
-
-		return data
-	}
-
-	name(rels, type) {
-		let name
-
-		rels.Relationships.Relationship.forEach(item => {
-			item = item['$']
-
-			if (item.Type == type) {
-				name = item.Target.substr(item.Target.lastIndexOf('/'))
-			}
-		})
-
-		return name
-	}
-
-	images(rels) {
-		let images = []
-
-		rels.Relationships.Relationship.forEach(item => {
-			item = item['$']
-
-			if (item.Type == TImage) {
-				images.push(this.data.files[item.Target.replace('..', 'ppt')])
-			}
-		})
-
-		return images
-	}
-
-	create(data) {
-		const id = Date.now().toString().substr(8, 13)
-
-		data = this.updateRels(data, id)
-
-		// new image
-		data.images.forEach((image, index) => {
-			this.data.files[`ppt/media/image${id+index}.jpg`] = image
-		})
-
-		// new slide
-		this.data.files[`ppt/slides/slide${id}.xml`] = data.slide.xml
-		this.data.files[`ppt/slides/_rels/slide${id}.xml.rels`] = data.slide.rels
-
-		// new layout
-		this.data.files[`ppt/slideLayouts/slideLayout${id}.xml`] = data.layout.xml
-		this.data.files[`ppt/slideLayouts/_rels/slideLayout${id}.xml.rels`] = data.layout.rels
-
-		// new presentation
-		let presentation = updatePresentation(id)
-
-		this.data.files['ppt/_rels/presentation.xml.rels'].Relationships.Relationship.push(...presentation.rels)
-		this.data.files['ppt/presentation.xml']['p:presentation']['p:sldIdLst'][0]['p:sldId'].push(presentation.xml)
-		this.data.files['ppt/presentation.xml']['p:presentation']['p:sldMasterIdLst'][0]['p:sldMasterId'].push(presentation.master)
-
-		// new master
-		this.data.files[`ppt/slideMasters/_rels/slideMaster${id}.xml.rels`] = data.master.rels
-		this.data.files[`ppt/slideMasters/slideMaster${id}.xml`] = data.master.xml
-		this.data.files[`ppt/slideMasters/slideMaster${id}.xml`]['p:sldMaster']['p:sldLayoutIdLst'][0]['p:sldLayoutId'].push(presentation.master)
-
-		// new content
-		let content = updateContent(id)
-
-		this.data.files['[Content_Types].xml'].Types.Override.push(...content)
-	}
-
-	updateRels(data, id) {
-
-		data.slide.rels = updateSlideRel(id, data.images, data.slide.rels)
-		data.layout.rels = updateLayoutRel(id)
-		data.master.rels = updateMasterRel(id, data.images, data.master.rels)
-
-		return data
-	}
 }
 
 module.exports = pptx
-
-// JSON.stringify(p1.data.files['ppt/_rels/presentation.xml.rels')
-// JSON.stringify(p1.data.files['ppt/slides/slide1.xml'])
