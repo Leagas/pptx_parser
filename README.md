@@ -24,7 +24,6 @@
 
 	- Genrate a node buffer and write to file using node fs.
 
-
 Demo:
 
 	- p1.data.files['ppt/slides/slide1.xml']
