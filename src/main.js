@@ -12,7 +12,6 @@ class pptx {
 
 		this.load(path.join(this.directory, file), (zip) => {
 			this.data = zip
-			this.parse()
 		})
 		return console.log('Creating new instance of pptx...')
 	}
@@ -132,7 +131,7 @@ class pptx {
 		this.updateLayouts(data.layout, id)
 		this.updateMedia(data.assets, id)
 
-		// we need to increament the presentation slide count to avoid ppt repair process
+		// we need to increment the presentation slide count to avoid ppt repair process
 		this.data.files['docProps/app.xml'].Properties['Slides'] = parseInt(this.data.files['docProps/app.xml'].Properties['Slides'][0] + 1).toString()
 	}
 
