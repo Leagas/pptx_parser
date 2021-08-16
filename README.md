@@ -1,3 +1,5 @@
+This is a simple proof of concept to show that pptx (powerpoint presentation) files can be merged together and/or sliced/edited using js.
+
 1. Load in .pptx using the pptx class:
 
 	const p1 = new pptx('/path/to/file.pptx')
